@@ -1,5 +1,5 @@
 import json
-from optparse import Values
+#from optparse import Values
 #from turtle import color
 #from operator import index
 #from tkinter.font import names
@@ -192,6 +192,7 @@ def dropdownList(n_clicks, data):
             )
     return children
 
+#calculation of the GWP
 @app.callback(
     Output({'type': 'dynamic-label', 'index': MATCH}, 'children'),
     Input({'type': 'dpd', 'index': MATCH},'value'),
@@ -205,9 +206,9 @@ def dynamicLabel(gwpValue, elName, data):
         df = pd.read_json(data)
         unit = df_db.loc[df_db['GWP'] == gwpValue, 'units'].values[0]
         if unit == 'm3': #volume calc
-           elGwp = gwpValue * df.loc[df['description'] == elName, 'Net Volume'].values[0]
+           elGwp = gwpValue * sum(df.loc[df['description'] == elName, 'Net Volume'])
         elif unit == 'm2': #area calc
-           elGwp = gwpValue * float(df.loc[df['description'] == elName, 'Area'].values[0])
+           elGwp = sum(pd.to_numeric(df.loc[df['description'] == elName, 'Area']))
         elif unit == 'Lm': #area calc
            elGwp = gwpValue * float(df.loc[df['description'] == elName, '3D Length'].values[0])
         elif unit == 'kg': #Kg calc
@@ -215,6 +216,7 @@ def dynamicLabel(gwpValue, elName, data):
         elif unit == 'T': #T calc
            elGwp = (df.loc[df['description'] == elName, 'Net Volume'].values[0] * float(df.loc[df['description'] == elName, 'density'].values[0])/1000)  #vol(m3) * Density(p)
         return np.around(elGwp, 4)
+        #return(elGwp)
 
         
 

@@ -1,4 +1,6 @@
 import json
+from optparse import Values
+#from turtle import color
 #from operator import index
 #from tkinter.font import names
 from unicodedata import name
@@ -13,6 +15,7 @@ from io import StringIO
 import base64
 
 import dash
+import dash_bootstrap_components as dbc
 from dash import html
 from dash import dcc
 
@@ -37,7 +40,7 @@ for i in range(len(df_db)):
     label_dict2.append({'label': df_db['material'][i], 'value': df_db['material'][i]})
 
 #------------------------APP INITIALISE----------------------------
-external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
+external_stylesheets = [dbc.themes.DARKLY]
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets, suppress_callback_exceptions=True)
 
 #-----------------------APP LAYOUT-----------------------------------
@@ -66,8 +69,8 @@ app.layout = html.Div(children = [
                 'marginTop': '1em',
                 'marginLeft': 'auto',
                 'marginRight': 'auto',
-                'backgroundColor': '#cbd5e1',
             },
+            className = 'bg-primary',
             multiple = True
         ),
         style = {'textAlign': 'center'}
@@ -82,10 +85,10 @@ app.layout = html.Div(children = [
                 id='section_2', 
                 style = {
                     'textAlign': 'center',
-                    'display': 'inline-block',
+                    #'display': 'inline-block',
                     'width': '35%',
                     'margin': 'auto',
-                    'marginRight': '2rem'
+                    #'marginRight': '2rem'
                     }),
 
             #section 3
@@ -93,9 +96,11 @@ app.layout = html.Div(children = [
                 id='section_3', 
                 style={
                     'textAlign':'center',
-                    'display': 'inline-block',
+                    #'display': 'inline-block',
                     'margin': 'auto',
+                    'paddingTop': '2rem',
                     'width': 'auto',
+                    'height': '720px'
                 }),
         ], 
         style = {
@@ -112,7 +117,6 @@ app.layout = html.Div(children = [
         style={
             'paddingLeft': '8em',
             'paddingRight': '8em',
-            'backgroundColor': '#f8fafc',
         }
     )
 
@@ -172,7 +176,7 @@ def dropdownList(n_clicks, data):
                         options = label_dict,
                         placeholder = 'Choose Material',
                         clearable = True,
-                        style = {'width': '100%','margin': 'auto'},
+                        style = {'width': '100%','margin': 'auto', 'color': '#171717'},
                         id = {
                             'type': 'dpd',
                             'index': i
@@ -220,18 +224,20 @@ def dynamicLabel(gwpValue, elName, data):
 @app.callback(Output('section_3', 'children'),
     [Input('calcBtn', 'n_clicks'),
     Input({'type':'dynamic-label', 'index': ALL}, component_property = 'children')],
+    State({'type': 'elementName', 'index': ALL}, 'children'),
+    #Input({'type': 'dpd', 'index': ALL},'value'),
     #State('data_store', 'data'),
     )
-def totGwp(btn, value):
+def totGwp(btn, value, names):
     if btn != 0:
         return PreventUpdate
     try:
         sumVal = sum(value)
         df = pd.DataFrame(value)
-        TotGwpPie = px.pie(df, values=value) #<==== ADD NAME TO THE GRAPH
+        TotGwpPie = px.pie(df, values=value, names=names, title='Global Warming Potential of Design', hover_name= names) #<==== ADD NAME TO THE GRAPH
         children = [
-            html.H3('Total Embodied Carbon is: {} CO2e'.format(sumVal)),
-            dcc.Graph(figure = TotGwpPie)
+            html.H3('Total Embodied Carbon is: {} CO2e'.format(np.around(sumVal, 3)*1000)), 
+            dcc.Graph(figure = TotGwpPie, )
             ]
     except:
         children = [html.H3('Please Fill in all Dropdown')]
@@ -276,16 +282,20 @@ def parse_contents(contents, filename):
     df['description'] = df['description'].str.cat(df['thickness'].apply(str), sep =" x ")
    #initialise main body and also styles it
     body_1 = html.Div([
+        dbc.Alert(
+            [
+                html.H3('Upload Success!', className = 'alert-heading'),
+                html.P('{} has been uploaded.'.format(filename),)
+            ],
+            id = 'uploadAlert',
+            dismissable = True,
+            is_open = True,
+        ),
         html.H5('{} has been uploaded.'.format(filename),
                style ={'marginBottom': '1em'}
               ),
         html.P('Click "Calculate" to proceed'),
-        html.Button('Calculate', id='calcBtn', n_clicks=0,
-                  style = {
-                      'backgroundColor': '#475569',
-                      'color': '#f1f5f9',
-                      'borderColor': '#f1f5f9'
-                  }),
+        dbc.Button('Calculate', id='calcBtn', n_clicks=0,),
         #html.P(str(df.to_json())),
         dcc.Store(id = 'data_store', data=df.to_json())
 

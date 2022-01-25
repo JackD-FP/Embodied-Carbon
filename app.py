@@ -151,32 +151,32 @@ def dropdownList(n_clicks, data):
         for i in range(len(df['description'].drop_duplicates())):
             children.append(
                 html.Div([
-                    html.P(df['description'].drop_duplicates().to_list()[i], 
-                        style = {'marginTop':'1em', 'display': 'inline-block'},
+                    html.P(df['description'].drop_duplicates().to_list()[i],
                         id = {
                             'type': 'elementName',
                             'index': i
-                        } 
+                        },
+                        className= 'd-inline-block mb-0 me-4 lead'
+                        
                         ),
                     #html.P() for dynamic label
                     html.P('Embodied Carbon is: ',
-                        style = {
-                            'marginLeft': '2em',
-                            'display': 'inline-block'
-                            }),
+                        className= 'd-inline-block me-2 mb-0'
+                        ),
                     html.P(
                         id = {
                         'type': 'dynamic-label',
                         'index': i
                         },
-                        style = {
-                            'display': 'inline-block'
-                            }),
+                        className= 'd-inline-block mb-0'),
                     dcc.Dropdown(
                         options = label_dict,
                         placeholder = 'Choose Material',
                         clearable = True,
-                        style = {'width': '100%','margin': 'auto', 'color': '#171717'},
+                        style = {
+                            'width': '100%', 
+                            'color': '#171717'
+                            },
                         id = {
                             'type': 'dpd',
                             'index': i
@@ -188,9 +188,15 @@ def dropdownList(n_clicks, data):
                 #         'textAlign':'center',
                 #         'display': 'inline-block'
                 #     }),
-                ])
+                ], className= 'm-5 justify-content-start')
             )
     return children
+
+def str2float(str):
+    if str.find(",")!=-1:
+        x= str.replace(',',"")
+        return float(x)
+    else: return float(str)
 
 #calculation of the GWP
 @app.callback(
@@ -207,19 +213,25 @@ def dynamicLabel(gwpValue, elName, data):
         unit = df_db.loc[df_db['GWP'] == gwpValue, 'units'].values[0]
         if unit == 'm3': #volume calc
            elGwp = gwpValue * sum(df.loc[df['description'] == elName, 'Net Volume'])
+
         elif unit == 'm2': #area calc
-           elGwp = sum(pd.to_numeric(df.loc[df['description'] == elName, 'Area']))
+            elGwp = pd.to_numeric(df.loc[df['description'] == elName, 'Area'], downcast='float') #FINISH THIS CODE ON THURSDAY MORNING
+
+            #elGwp = pd.to_numeric(df.loc[df['description'] == elName, 'Area'])
+           #elGwp = sum(pd.to_numeric(df.loc[df['description'] == elName, 'Area']))
+        #    df_clean = df['Area'].replace(',','')
+        #    elGwp = df_clean.loc[df_clean['description'] == elName, 'Net Volume']
+
+
         elif unit == 'Lm': #area calc
            elGwp = gwpValue * float(df.loc[df['description'] == elName, '3D Length'].values[0])
+
         elif unit == 'kg': #Kg calc
            elGwp = df.loc[df['description'] == elName, 'Net Volume'].values[0] * float(df.loc[df['description'] == elName, 'density'].values[0])  #vol(m3) * Density(p)
+
         elif unit == 'T': #T calc
            elGwp = (df.loc[df['description'] == elName, 'Net Volume'].values[0] * float(df.loc[df['description'] == elName, 'density'].values[0])/1000)  #vol(m3) * Density(p)
         return np.around(elGwp, 4)
-        #return(elGwp)
-
-        
-
 
 
 #callback for Section 3
@@ -246,15 +258,6 @@ def totGwp(btn, value, names):
 
     return children
 
-# @app.callback(
-#     Output('TotGwpPie', 'figure'),
-#     Input({'type':'dynamic-label', 'index': ALL}, component_property = 'children')
-#     )
-# def update_pie(value):
-#     try:
-        
-#     except:
-#         return PreventUpdate
     
     
 #------------------functions for parse-------------------------

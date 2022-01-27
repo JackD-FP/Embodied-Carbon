@@ -1,8 +1,3 @@
-import json
-#from optparse import Values
-#from turtle import color
-#from operator import index
-#from tkinter.font import names
 from unicodedata import name
 
 import pandas as pd
@@ -10,6 +5,7 @@ import numpy as np
 
 import plotly.express as px
 import plotly.graph_objects as go
+import plotly.io as pio
 import io
 from io import StringIO
 import base64
@@ -148,10 +144,13 @@ def dropdownList(n_clicks, data):
         return dash.no_update
     else: 
         df = pd.read_json(data)
-        for i in range(len(df['description'].drop_duplicates())):
+        # for i in range(len(df['description'].drop_duplicates())):
+        for i in range(len(df['description'])):
+            gwp_value = df_db.loc[df_db['material'] == str(df['Materials Property'][i]), 'GWP'].values[0]
             children.append(
                 html.Div([
-                    html.P(df['description'].drop_duplicates().to_list()[i],
+                    # html.P(df['description'].drop_duplicates().to_list()[i],
+                    html.P(df['description'].to_list()[i],
                         id = {
                             'type': 'elementName',
                             'index': i
@@ -159,7 +158,7 @@ def dropdownList(n_clicks, data):
                         className= 'd-inline-block mb-0 me-4 lead'
                         
                         ),
-                    #html.P() for dynamic label
+                    #html.P('{}'.format(gwp_value)),
                     html.P('Embodied Carbon is: ',
                         className= 'd-inline-block me-2 mb-0'
                         ),
@@ -171,6 +170,7 @@ def dropdownList(n_clicks, data):
                         className= 'd-inline-block mb-0'),
                     dcc.Dropdown(
                         options = label_dict,
+                        value = gwp_value,
                         placeholder = 'Choose Material',
                         clearable = True,
                         style = {
@@ -182,12 +182,6 @@ def dropdownList(n_clicks, data):
                             'index': i
                         }
                     ),
-                # html.Div(
-                #     id='section_3', 
-                #     style={
-                #         'textAlign':'center',
-                #         'display': 'inline-block'
-                #     }),
                 ], className= 'm-5 justify-content-start')
             )
     return children
@@ -211,28 +205,23 @@ def dynamicLabel(gwpValue, elName, data):
     else:
         df = pd.read_json(data)
         unit = df_db.loc[df_db['GWP'] == gwpValue, 'units'].values[0]
+        #unit = df_db.loc[df_db['GWP'] == gwpValue, 'units']
         if unit == 'm3': #volume calc
            elGwp = gwpValue * sum(df.loc[df['description'] == elName, 'Net Volume'])
 
         elif unit == 'm2': #area calc
-            elGwp = pd.to_numeric(df.loc[df['description'] == elName, 'Area'], downcast='float') #FINISH THIS CODE ON THURSDAY MORNING
-
-            #elGwp = pd.to_numeric(df.loc[df['description'] == elName, 'Area'])
-           #elGwp = sum(pd.to_numeric(df.loc[df['description'] == elName, 'Area']))
-        #    df_clean = df['Area'].replace(',','')
-        #    elGwp = df_clean.loc[df_clean['description'] == elName, 'Net Volume']
-
+            elGwp = gwpValue * sum(pd.to_numeric(df.loc[df['description'] == elName, 'Area'], downcast='float'))
 
         elif unit == 'Lm': #area calc
-           elGwp = gwpValue * float(df.loc[df['description'] == elName, '3D Length'].values[0])
+           elGwp = gwpValue * sum(pd.to_numeric(df.loc[df['description'] == elName, '3D Length'].values[0]))
 
         elif unit == 'kg': #Kg calc
-           elGwp = df.loc[df['description'] == elName, 'Net Volume'].values[0] * float(df.loc[df['description'] == elName, 'density'].values[0])  #vol(m3) * Density(p)
+            elGwp = sum(df.loc[df['description'] == elName, 'Net Volume']) * df_db.loc[df_db['GWP'] == gwpValue, 'density'].values[0]
 
         elif unit == 'T': #T calc
-           elGwp = (df.loc[df['description'] == elName, 'Net Volume'].values[0] * float(df.loc[df['description'] == elName, 'density'].values[0])/1000)  #vol(m3) * Density(p)
+            #elGwp = sum(df.loc[df['description'] == elName, 'Net Volume']) * df_db.loc[df_db['GWP'] == gwpValue, 'density'].values[0] * 1000
+            elGwp = sum(df.loc[df['description'] == elName, 'Net Volume']) * df_db.loc[df_db['GWP'] == gwpValue, 'density'].values[0]
         return np.around(elGwp, 4)
-
 
 #callback for Section 3
 @app.callback(Output('section_3', 'children'),
@@ -240,25 +229,27 @@ def dynamicLabel(gwpValue, elName, data):
     Input({'type':'dynamic-label', 'index': ALL}, component_property = 'children')],
     State({'type': 'elementName', 'index': ALL}, 'children'),
     #Input({'type': 'dpd', 'index': ALL},'value'),
-    #State('data_store', 'data'),
+    State('data_store', 'data'),
     )
-def totGwp(btn, value, names):
+def totGwp(btn, value, names, data):
     if btn != 0:
         return PreventUpdate
     try:
         sumVal = sum(value)
-        df = pd.DataFrame(value)
-        TotGwpPie = px.pie(df, values=value, names=names, title='Global Warming Potential of Design', hover_name= names) #<==== ADD NAME TO THE GRAPH
+        #df = pd.DataFrame(value)
+        #df2 = pd.DataFrame(data)
+        #df = df.append(df2['description'])
+        #df3 = df.insert(1, 'Names', df2['description'])
+        #TotGwpPie= px.pie(df, values = value, names = names, hover_name = names) #<==== ADD NAME TO THE GRAPH
+        #total_bar = px.line(df)
         children = [
-            html.H3('Total Embodied Carbon is: {} CO2e'.format(np.around(sumVal, 3)*1000)), 
-            dcc.Graph(figure = TotGwpPie, )
+            html.H3('Total Embodied Carbon is: {} CO2e'.format(np.around(sumVal, 3))), 
+           # dcc.Graph(figure = TotGwpPie, )
             ]
     except:
         children = [html.H3('Please Fill in all Dropdown')]
 
     return children
-
-    
     
 #------------------functions for parse-------------------------
 def parse_contents(contents, filename):
@@ -282,9 +273,11 @@ def parse_contents(contents, filename):
     height = df.insert(1,"height", df['Cross Section Height at Bottom/Start (cut)'].replace('---',0))
     width = df.insert(1,"width", df['Cross Section Width at Bottom/Start (cut)'].replace('---',0))
     thickness = df.insert(1, "thickness", df['Thickness'].replace('---',0))
-    df['description'] = df['Element Type'].str.cat(df['height'].apply(str), sep =" | ")
+    df['description'] = df['Home Story Name'].str.cat(df['Element Type'].apply(str), sep =" | ")
+    df['description'] = df['description'].str.cat(df['height'].apply(str), sep =" | ")
     df['description'] = df['description'].str.cat(df['width'].apply(str), sep =" x ")
     df['description'] = df['description'].str.cat(df['thickness'].apply(str), sep =" x ")
+    df = df.sort_values(by=['description'])
    #initialise main body and also styles it
     body_1 = html.Div([
         dbc.Alert(

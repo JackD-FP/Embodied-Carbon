@@ -16,6 +16,9 @@ import dash_bootstrap_components as dbc
 import pandas as pd
 import numpy as np
 
+import graph_components as gc
+import make_cards as mc
+
 #import database of materials property df_db
 #READ CSV DATABASE
 df_db = pd.read_csv("Basic Material v3.csv")
@@ -77,8 +80,6 @@ def parse_contents(contents, filename, date):
     df['description'] = df['description'].str.cat(df['Thickness'].apply(str), sep =" x ")
     df = df.sort_values(by=['description'])
     df = df.replace('---', 0)
-    # if 'id' in df.columns:
-    #     df = df.drop(columns = ['id'])
     
     gwp_list = []
     for i in range(len(df)):
@@ -96,11 +97,10 @@ def parse_contents(contents, filename, date):
             gwp_solution = gwp * df['3D Length'][i]
             gwp_list.append(np.around(gwp_solution, 4))
         elif unit == 'T': #Tonnes gwp calculation
-            gwp_solution = gwp * pd.to_numeric(df['Net Volume'][i], downcast='float') * pd.to_numeric(density, downcast='float')/1000
+            gwp_solution = gwp * pd.to_numeric(df['Net Volume'][i], downcast='float') * pd.to_numeric(density, downcast='float')
             gwp_list.append(np.around(gwp_solution, 4))
         elif unit == 'kg': #kg gwp calculation
             gwp_solution = gwp * pd.to_numeric(df['Net Volume'][i], downcast='float') * pd.to_numeric(density, downcast='float')  #MAY NEED TO CONVERT TO TONNES DOUBLE CHECK UNITS
-            gwp_solution = gwp_solution
             gwp_list.append(np.around(gwp_solution, 4))
     
     df_gwp = pd.DataFrame(gwp_list, columns=['gwp calc'])
@@ -108,7 +108,7 @@ def parse_contents(contents, filename, date):
     df2 = pd.concat([df['description'], df['Materials Property'],df['3D Length'], df['Area'], df['Net Volume']], axis = 1)
     df2 = df2.join(df_gwp['gwp calc'])
 
-    gwp_sum = np.around(sum(df2['gwp calc']), 3) #sum of all gwp values
+    gwp_sum = np.around(sum(df2['gwp calc'])/1000, 3) #sum of all gwp values
 
     return html.Div([
         html.H5(filename),
@@ -120,12 +120,12 @@ def parse_contents(contents, filename, date):
             style_data={
                 'whiteSpace': 'normal',
                 'width': 'auto',
-                'background': '#525252'               
+                'backgroundColor': '#525252'               
             },
             style_header={'background': '#262626' }
 
         ),
-        html.H3('Total embodied carbon is {:,} CO2e.'.format(gwp_sum)),
+        html.H3('Total embodied carbon is {:,} TCO2e.'.format(gwp_sum)),
         dcc.Store(id='stored_data', data=df2.to_dict('records')),
         dcc.Store(id = 'stored_sum', data = gwp_sum),
         html.Hr(),  # horizontal line
@@ -135,6 +135,9 @@ def parse_contents(contents, filename, date):
     ],
     className='')
 
+def update_table_edit_tabs(active_tab):
+    if active_tab == 'table_tab':
+        return 
 
 @app.callback(Output('output-datatable', 'children'),
               Input('upload-data', 'contents'),
@@ -156,53 +159,10 @@ def make_cards(n):
     if n is None:
         return dash.no_update
     else:
-        first_card = dbc.Card(
-            dbc.CardBody(
-                [
-                    html.H3("Build Parameters", className="card-title"),
-                    html.Div([
-                        html.Div([
-                            html.P("GFA (sq m)", className='mb-1'),
-                            dcc.Input(id = 'nla', type = 'number', className='border rounded-3'),
-                        ], className='my-3'),                        
-                        html.Div([
-                            html.P("Building Perimeter (meters)", className='mb-1'),
-                            dcc.Input(id = 'perimeter', type = 'number', className='border rounded-3'),
-                        ], className='my-3'),
-                        html.Div([
-                            html.P("Floor to Floor Height (meters)", className='mb-1'),
-                            dcc.Input(id = 'f2f', type = 'number', className='border rounded-3'),
-                        ], className='my-3'),
-                        html.Div([
-                            html.P("Number of Floors", className='mb-1'),
-                            dcc.Input(id = 'num_floors', type = 'number', className='border rounded-3'),
-                        ], className='my-3'),
-                    ],
-                    ),
-                    html.Div([
-                        html.Div(id='embodied_carbon')
-                    ], className='my-3')
-                ]
-            ),
-            className='shadow'
-        )
-        second_card = dbc.Card(
-            dbc.CardBody(
-                [
-                    html.H5("Card title", className="card-title"),
-                    html.P(
-                        "This card also has some text content and not much else, but "
-                        "it is twice as wide as the first card."
-                    ),
-                    dbc.Button("Go somewhere", color="primary"),
-                ]
-            ),
-            className='shadow'
-        )
         children = dbc.Row(
             [
-                dbc.Col(first_card, width = 4),
-                dbc.Col(second_card, width = 8)
+                dbc.Col(mc.first_cards(), width = 4),
+                dbc.Col(mc.second_card(), width = 8)
             ]
         )
         return children
@@ -224,6 +184,17 @@ def benchmark(nla, store_sum):
             html.H5('Building Benchmark is {} CO2e per sqm'.format(np.around(benchmark, 3)))
         ])
     return children
+
+
+@app.callback(
+    Output('tab_content', 'children'),
+    Input('tab_ID', 'active_tab')
+)
+def tab_render(tab):
+    if tab == 'bar_graph_tab':
+        return gc.gwp_bar()
+    elif tab == 'pie_graph_tab':
+        return  gc.gwp_pie()
 
 if __name__ == '__main__':
     app.run_server(debug=True)

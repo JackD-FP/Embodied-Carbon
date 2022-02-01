@@ -1,15 +1,15 @@
 import base64
 import datetime
 import io
-import locale
-from pydoc import classname
+
 
 
 import dash
 from dash.dependencies import Input, Output, State
-import dash_core_components as dcc
-import dash_html_components as html
-import dash_table
+from dash import dcc
+from dash import html
+from dash import dash_table
+from dash.dash_table.Format import Group
 import plotly.express as px
 import dash_bootstrap_components as dbc
 
@@ -52,7 +52,10 @@ app.layout = html.Div([ # this code section taken from Dash docs https://dash.pl
     ),
     html.Div(id='output-datatable', className='mb-5'),
     html.Div(id='output-div'),
-    html.Div(id='section_2')
+    html.Div(id='section_2'),
+    html.Hr(className='mt-5'),  # horizontal line
+    html.Div('Brought to you by Jack Jack', className='my-5'),
+
 ], className='px-5')
 
 
@@ -104,11 +107,10 @@ def parse_contents(contents, filename, date):
             gwp_list.append(np.around(gwp_solution, 4))
     
     df_gwp = pd.DataFrame(gwp_list, columns=['gwp calc'])
-    #df2 = pd.concat([df['Materials Property'],df['3D Length'], df['Area'], df['Net Volume'], df['description']], axis = 1) #new dataframe
     df2 = pd.concat([df['description'], df['Materials Property'],df['3D Length'], df['Area'], df['Net Volume']], axis = 1)
-    df2 = df2.join(df_gwp['gwp calc'])
-
-    gwp_sum = np.around(sum(df2['gwp calc'])/1000, 3) #sum of all gwp values
+    df2 = df2.join(df_gwp['gwp calc'])#for tabulation
+    df = df.join(df_gwp['gwp calc'])#for storage to get data later
+    gwp_sum = np.around(sum(df2['gwp calc']), 3) #sum of all gwp values
 
     return html.Div([
         html.H5(filename),
@@ -125,19 +127,16 @@ def parse_contents(contents, filename, date):
             style_header={'background': '#262626' }
 
         ),
-        html.H3('Total embodied carbon is {:,} TCO2e.'.format(gwp_sum)),
-        dcc.Store(id='stored_data', data=df2.to_dict('records')),
+        html.H3('Total embodied carbon is {:,} TCO2e.'.format(gwp_sum/1000)),
+        dcc.Store(id='stored_data', data=df.to_json()),
         dcc.Store(id = 'stored_sum', data = gwp_sum),
-        html.Hr(),  # horizontal line
 
-        # For debugging, display the raw contents provided by the web browser
-        html.Div('Brought to you by Jack Jack'),
     ],
     className='')
 
-def update_table_edit_tabs(active_tab):
-    if active_tab == 'table_tab':
-        return 
+# def update_table_edit_tabs(active_tab):
+#     if active_tab == 'table_tab':
+#         return 
 
 @app.callback(Output('output-datatable', 'children'),
               Input('upload-data', 'contents'),
@@ -153,33 +152,32 @@ def update_output(list_of_contents, list_of_names, list_of_dates):
 
 @app.callback(Output('output-div', 'children'),
               Input('stored_sum','data'),
-              #State('stored_sum','data'),
               )
 def make_cards(n):
     if n is None:
         return dash.no_update
     else:
+
         children = dbc.Row(
             [
-                dbc.Col(mc.first_cards(), width = 4),
+                dbc.Col(mc.first_card(), width = 4),
                 dbc.Col(mc.second_card(), width = 8)
             ]
-        )
-        return children
+    )
+    return children
 
 
 @app.callback(
     Output('embodied_carbon', 'children'),
-    #Input('num_floors', 'value'),
-    Input('nla', 'value'),
+    Input('gfa', 'value'),
     State('stored_sum', 'data')
 )
-def benchmark(nla, store_sum):
-
-    if nla is None:
+def benchmark(value, store_sum):
+    if value is None:
         return dash.no_update
     else:
-        benchmark = store_sum/nla
+        #benchmark = store_sum/gfa
+        benchmark = store_sum/value
         children = html.Div([
             html.H5('Building Benchmark is {} CO2e per sqm'.format(np.around(benchmark, 3)))
         ])
@@ -188,13 +186,21 @@ def benchmark(nla, store_sum):
 
 @app.callback(
     Output('tab_content', 'children'),
-    Input('tab_ID', 'active_tab')
+    Input('tab_ID', 'active_tab'),
 )
 def tab_render(tab):
-    if tab == 'bar_graph_tab':
+    if tab == 'bar_graph_tab':            
         return gc.gwp_bar()
-    elif tab == 'pie_graph_tab':
-        return  gc.gwp_pie()
+    elif tab == 'pie_graph_tab':            
+        return gc.gwp_pie()
+
+@app.callback(
+    Output('select_pie_div', 'children'),
+    Input('pie_select', 'value'),
+    State('stored_data', 'data')
+)
+def select_div(value,data):
+    return gc.select_pie(value, data)
 
 if __name__ == '__main__':
     app.run_server(debug=True)

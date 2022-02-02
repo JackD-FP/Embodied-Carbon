@@ -138,10 +138,12 @@ def parse_contents(contents, filename, date):
 #     if active_tab == 'table_tab':
 #         return 
 
-@app.callback(Output('output-datatable', 'children'),
-              Input('upload-data', 'contents'),
-              State('upload-data', 'filename'),
-              State('upload-data', 'last_modified'))
+@app.callback(
+    Output('output-datatable', 'children'),
+    Input('upload-data', 'contents'),
+    State('upload-data', 'filename'),
+    State('upload-data', 'last_modified')
+)
 def update_output(list_of_contents, list_of_names, list_of_dates):
     if list_of_contents is not None:
         children = [
@@ -150,9 +152,10 @@ def update_output(list_of_contents, list_of_names, list_of_dates):
         return children
 
 
-@app.callback(Output('output-div', 'children'),
-              Input('stored_sum','data'),
-              )
+@app.callback(
+    Output('output-div', 'children'),
+    Input('stored_sum','data'),
+)
 def make_cards(n):
     if n is None:
         return dash.no_update
@@ -176,7 +179,6 @@ def benchmark(value, store_sum):
     if value is None:
         return dash.no_update
     else:
-        #benchmark = store_sum/gfa
         benchmark = store_sum/value
         children = html.Div([
             html.H5('Building Benchmark is {} CO2e per sqm'.format(np.around(benchmark, 3)))
@@ -184,23 +186,33 @@ def benchmark(value, store_sum):
     return children
 
 
-@app.callback(
+@app.callback( #WE NEED TO CHANGE THIS TO A CLIENT SIDE CALL BACK! NID MUCH FEST MUST SPID MUCH ZOOMIES
     Output('tab_content', 'children'),
     Input('tab_ID', 'active_tab'),
 )
 def tab_render(tab):
-    if tab == 'bar_graph_tab':            
-        return gc.gwp_bar()
-    elif tab == 'pie_graph_tab':            
+    if tab == 'pie_graph_tab':            
         return gc.gwp_pie()
+    elif tab == 'bar_graph_tab':            
+        return gc.gwp_bar()
 
-@app.callback(
+@app.callback( #I CHANGED THISSSSS 
     Output('select_pie_div', 'children'),
     Input('pie_select', 'value'),
+    State('stored_data', 'data'),
+    State('stored_sum', 'data')
+)
+def select_div(value, data, data_sum):
+    return gc.select_pie(value, data, data_sum)
+
+@app.callback(
+    Output('material_per_floor_div', 'children'),
+    Input('material_selection', 'value'),
     State('stored_data', 'data')
 )
-def select_div(value,data):
-    return gc.select_pie(value, data)
+def material_select(value, data):
+    return gc.material_select_(value, data)
+
 
 if __name__ == '__main__':
     app.run_server(debug=True)

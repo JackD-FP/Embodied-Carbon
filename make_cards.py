@@ -32,10 +32,10 @@ def second_card():
             html.H3('Building Analytics'),
             dbc.Tabs(
                 id = "tab_ID",
-                active_tab = 'bar_graph_tab',
+                active_tab = 'pie_graph_tab',
                 children = [
-                    dbc.Tab(label='Bar Graphs', tab_id = 'bar_graph_tab'),
                     dbc.Tab(label='Pie Graph', tab_id= 'pie_graph_tab'),
+                    dbc.Tab(label='Bar Graphs', tab_id = 'bar_graph_tab'),
                 ]
             ),
             html.Div(id='tab_content')

@@ -1,8 +1,7 @@
 import base64
 import datetime
 import io
-
-
+import xlrd
 
 import dash
 from dash.dependencies import Input, Output, State
@@ -110,7 +109,7 @@ def parse_contents(contents, filename, date):
     df2 = pd.concat([df['description'], df['Materials Property'],df['3D Length'], df['Area'], df['Net Volume']], axis = 1)
     df2 = df2.join(df_gwp['gwp calc'])#for tabulation
     df = df.join(df_gwp['gwp calc'])#for storage to get data later
-    gwp_sum = np.around(sum(df2['gwp calc']), 3) #sum of all gwp values
+    gwp_sum = sum(df2['gwp calc']) #sum of all gwp values
 
     return html.Div([
         html.H5(filename),
@@ -127,16 +126,12 @@ def parse_contents(contents, filename, date):
             style_header={'background': '#262626' }
 
         ),
-        html.H3('Total embodied carbon is {:,} TCO2e.'.format(gwp_sum/1000)),
+        html.H3('Total embodied carbon is {:,} TCO2e.'.format(np.around(gwp_sum/1000),3)),
         dcc.Store(id='stored_data', data=df.to_json()),
         dcc.Store(id = 'stored_sum', data = gwp_sum),
 
     ],
     className='')
-
-# def update_table_edit_tabs(active_tab):
-#     if active_tab == 'table_tab':
-#         return 
 
 @app.callback(
     Output('output-datatable', 'children'),
@@ -213,6 +208,12 @@ def select_div(value, data, data_sum):
 def material_select(value, data):
     return gc.material_select_(value, data)
 
+# @app.callback(
+#     Output('log_bar', 'figure'),
+#     Input('log_switch','value')
+# )
+# def log_switch(value):
+#     return gc.switch_log_bar(value)
 
 if __name__ == '__main__':
     app.run_server(debug=True)

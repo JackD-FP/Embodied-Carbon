@@ -1,7 +1,3 @@
-
-from click import style
-import dash
-from dash.dependencies import Input, Output, State
 from dash import dcc
 from dash import html
 from dash import dash_table
@@ -16,7 +12,7 @@ import make_cards as mc
 
 def gwp_bar():
     children = html.Div([
-                html.H3('bar graph under constructions')
+                html.H3('under constructions')
             ])
     return children
 
@@ -58,7 +54,7 @@ def select_pie(value, data, data_sum):
     for i in range(len(floor_list)):
         floors = sum(df.loc[floor_list[i] == df['Home Story Name'], 'gwp calc'])
         floor_list_sum.append(np.around(floors,3))  #list of gwp per floor
-        floor_percent.append(np.around((floor_list_sum[i]/data_sum)*100, 3))    #list of % per floor
+        floor_percent.append(np.around((floor_list_sum[i]/data_sum)*100, 1))    #list of % per floor
 
 
     if value == '1':  
@@ -91,17 +87,17 @@ def select_pie(value, data, data_sum):
     elif value == '2':  
         d = {'Floor Level': floor_list, 'Percentage': floor_percent,'GWP Value': floor_list_sum}
         df_floor = pd.DataFrame(data=d)
-        df_floor= df_floor.sort_values(by=['Floor Level'])
-        
-        pie = px.pie(
+
+        bar = px.bar(
             data_frame=df_floor, 
-            values='GWP Value', 
-            names='Floor Level',
-            title='GWP per Floor (%)', 
-            labels={'Floor Level'}
-            )
-        pie.update_traces(textposition='inside')
-        pie.update_layout(legend_traceorder='normal')
+            x='Floor Level', 
+            y='GWP Value', 
+            log_y=False,
+            title='GWP per Floor (%)',
+            labels={
+                'GWP Value': 'GWP Value in Log'
+            }
+        )
 
         return html.Div(
             [
@@ -114,72 +110,82 @@ def select_pie(value, data, data_sum):
                         'width': 'auto',
                         'backgroundColor': '#525252'               
                     },
-                    style_header={'background': '#262626' },
+                    style_header={'background': '#262626'},
                 ),
-                dcc.Graph(figure=pie ,style={'height': '50vh'}),
+                dcc.Graph(figure=bar, style={'height': '50vh'},className='my-3', id='log_bar'),
+                dbc.Switch(
+                    id='log_switch',
+                    label='Logarithmic Y-axis',
+                    value=False,
+                )
             ]
         )
 
     elif value == '3':
-
         return html.Div(
             [  
-                html.H5('Material'),
+                html.H5('Material', ),
                 dbc.Select( 
                     id='material_selection',
+                    #value=opt_list[0], #this should work but the graphs don't load instantly
                     options = opt_list,
                     placeholder='Choose Material',
                     style={
                         'width':'25%'
-                    }
+                    },
+                    className='my-3'
                 ),
                 html.Div(id='material_per_floor_div'), #div for callback to output graph depending on selection
             ]
         )
 
-
 def material_select_(value, data):
     df = pd.read_json(data)
+    df_new = df.filter(items=['Home Story Name', 'Materials Property', 'gwp calc'])
+    df_new = df_new.rename(columns={'Home Story Name':'floors', 'Materials Property': 'materials', 'gwp calc': 'gwp'})
     mat_list = df['Materials Property'].drop_duplicates().tolist()
+
+    #creates a consolidated floors names in a given value
+    _gwp_list = []
+    _lvl_drop = df.loc[value == df['Materials Property'], 'Home Story Name'].drop_duplicates().tolist()
+
+    #create special dataframe just for value
+    _lvl = df.loc[value == df['Materials Property'], 'Home Story Name'].tolist()
+    _gwp = df.loc[value == df['Materials Property'], 'gwp calc'].tolist()
+    _df = pd.DataFrame({'floor': _lvl, 'gwp': _gwp})
+
+    for j in range(len(_lvl_drop)): #consolidates all the gwp per floor per mat_list[i]
+        _gwp_consolidate = sum(_df.loc[_lvl_drop[j] == _df['floor'], 'gwp'].tolist())
+        _gwp_list.append(np.around(_gwp_consolidate, 3))
+
+    _df_consolidate = pd.DataFrame({'floor': _lvl_drop, 'gwp': _gwp_list})
+
+    bar_comparison = px.bar(df_new, x='floors', y='gwp', color='materials', title='GWP Comparison Between Material and Floor')
 
     for i in range(len(mat_list)):
         if value == mat_list[i]:
-            _gwp = []
-            #_gwp = df.loc[mat_list[i] == df['Materials Property'], 'gwp calc']
-            _lvl = df.loc[mat_list[i] == df['Materials Property'], 'Home Story Name'].drop_duplicates().tolist()
-
-            for j in range(len(_lvl)):
-                _gwp_consolidate = sum(df.loc[_lvl[j] == df['Home Story Name'], 'gwp calc'].tolist())
-                _gwp.append(np.around(_gwp_consolidate, 3))
-        
-            mat = {'story':_lvl, 'gwp':_gwp}
-            mat_pd = pd.DataFrame(data=mat)
-
-            pie = px.pie(
-                data_frame=mat_pd,
-                values='gwp',
-                names='story' 
+            bar = px.bar(
+                data_frame=_df_consolidate,
+                x='floor',
+                y='gwp',
+                title='GWP of {} per floor'.format(mat_list[i])
             )
-            #pie.update_traces(textposition='inside')
 
-            return html.Div(
+            children =  html.Div(
                 [
                     dash_table.DataTable(
-                    data=mat_pd.to_dict('records'),
-                    columns=[{'name': i, 'id': i} for i in mat_pd.columns],
+                    data=_df_consolidate.to_dict('records'),
+                    columns=[{'name': i, 'id': i} for i in _df_consolidate.columns],
                     page_size=10,
                     style_data={
                         'whiteSpace': 'normal',
                         'width': 'auto',
                         'backgroundColor': '#525252'               
                     },
-                    style_header={'background': '#262626' },
+                    style_header={'background': '#262626'},
                 ),
-                    html.P('{}'.format(value)),
-                    dcc.Graph(figure=px.pie(
-                        data_frame=mat_pd,
-                        values='gwp',
-                        names='story' 
-                        ),style={'height': '50vh'})
-                ]
-            )
+                    dcc.Graph(figure=bar, style={'height': '50vh'},className='mt-3'),
+                    dcc.Graph(figure=bar_comparison, style={'height': '50vh'})
+                ])
+            return children
+    

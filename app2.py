@@ -195,10 +195,9 @@ def tab_render(tab):
     Output('select_pie_div', 'children'),
     Input('pie_select', 'value'),
     State('stored_data', 'data'),
-    State('stored_sum', 'data')
 )
-def select_div(value, data, data_sum):
-    return gc.select_pie(value, data, data_sum)
+def select_div(value, data):
+    return gc.select_pie(value, data)
 
 @app.callback(
     Output('material_per_floor_div', 'children'),
@@ -208,12 +207,22 @@ def select_div(value, data, data_sum):
 def material_select(value, data):
     return gc.material_select_(value, data)
 
-# @app.callback(
-#     Output('log_bar', 'figure'),
-#     Input('log_switch','value')
-# )
-# def log_switch(value):
-#     return gc.switch_log_bar(value)
+@app.callback(
+    Output('gwp floor bar', 'children'),
+    Input('log_switch','value'),
+    State('stored_data', 'data'),
+    State('stored_sum', 'data')
+)
+def log_switch(value,data,data_sum):
+    return gc.gwp_floor_bar(value, data, data_sum)
+
+@app.callback(
+    Output('bar comparison', "children"),
+    Input('mat_log_switch', 'value'),
+    State('stored_data', 'data')
+)
+def log_material(value, data):
+    return gc.log_material_select(value, data)
 
 if __name__ == '__main__':
     app.run_server(debug=True)

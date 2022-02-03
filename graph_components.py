@@ -35,27 +35,18 @@ def gwp_pie():
     ]
     return children
 
-def select_pie(value, data, data_sum):
+def select_pie(value, data):
     df = pd.read_json(data)
 
     mat_list_sum = [] 
-    floor_list_sum = []
-    floor_percent = []
     opt_list = []
 
     mat_list = df['Materials Property'].drop_duplicates().tolist()
-    floor_list = df['Home Story Name'].drop_duplicates().tolist()
 
     for i in range(len(mat_list)):
         mat = sum(df.loc[mat_list[i] == df['Materials Property'], 'gwp calc'])
         mat_list_sum.append(np.around(mat,3)) #list of gwp per material
         opt_list.append({"label": mat_list[i], "value": mat_list[i]})
-
-    for i in range(len(floor_list)):
-        floors = sum(df.loc[floor_list[i] == df['Home Story Name'], 'gwp calc'])
-        floor_list_sum.append(np.around(floors,3))  #list of gwp per floor
-        floor_percent.append(np.around((floor_list_sum[i]/data_sum)*100, 1))    #list of % per floor
-
 
     if value == '1':  
         d = {'materials': mat_list, 'gwp value':mat_list_sum}
@@ -85,34 +76,9 @@ def select_pie(value, data, data_sum):
         )
 
     elif value == '2':  
-        d = {'Floor Level': floor_list, 'Percentage': floor_percent,'GWP Value': floor_list_sum}
-        df_floor = pd.DataFrame(data=d)
-
-        bar = px.bar(
-            data_frame=df_floor, 
-            x='Floor Level', 
-            y='GWP Value', 
-            log_y=False,
-            title='GWP per Floor (%)',
-            labels={
-                'GWP Value': 'GWP Value in Log'
-            }
-        )
-
         return html.Div(
             [
-                dash_table.DataTable(
-                    data=df_floor.to_dict('records'),
-                    columns=[{'name': i, 'id': i} for i in df_floor.columns],
-                    page_size=10,
-                    style_data={
-                        'whiteSpace': 'normal',
-                        'width': 'auto',
-                        'backgroundColor': '#525252'               
-                    },
-                    style_header={'background': '#262626'},
-                ),
-                dcc.Graph(figure=bar, style={'height': '50vh'},className='my-3', id='log_bar'),
+                html.Div(id='gwp floor bar'),
                 dbc.Switch(
                     id='log_switch',
                     label='Logarithmic Y-axis',
@@ -120,7 +86,7 @@ def select_pie(value, data, data_sum):
                 )
             ]
         )
-
+        
     elif value == '3':
         return html.Div(
             [  
@@ -139,10 +105,49 @@ def select_pie(value, data, data_sum):
             ]
         )
 
+def gwp_floor_bar(value, data, data_sum):
+    df = pd.read_json(data)
+
+    floor_list_sum = []
+    floor_percent = []
+
+    floor_list = df['Home Story Name'].drop_duplicates().tolist()
+    for i in range(len(floor_list)):
+        floors = sum(df.loc[floor_list[i] == df['Home Story Name'], 'gwp calc'])
+        floor_list_sum.append(np.around(floors,3))  #list of gwp per floor
+        floor_percent.append(np.around((floor_list_sum[i]/data_sum)*100, 1))    #list of % per floo
+
+    d = {'Floor Level': floor_list, 'Percentage': floor_percent,'GWP Value': floor_list_sum}
+    df_floor = pd.DataFrame(data=d)
+    bar = px.bar(
+        data_frame=df_floor, 
+        x='Floor Level', 
+        y='GWP Value', 
+        log_y=value,
+        title='GWP per Floor (%)',
+        labels={
+            'GWP Value': 'GWP Value in Log'
+        }
+    ) 
+    return [
+        dash_table.DataTable(
+            data=df_floor.to_dict('records'),
+            columns=[{'name': i, 'id': i} for i in df_floor.columns],
+            page_size=10,
+            style_data={
+                'whiteSpace': 'normal',
+                'width': 'auto',
+                'backgroundColor': '#525252'               
+            },
+            style_header={'background': '#262626'},
+        ),
+        dcc.Graph(figure=bar, style={'height': '50vh'},className='my-3', id='log_bar'),
+    ]
+    
+
 def material_select_(value, data):
     df = pd.read_json(data)
-    df_new = df.filter(items=['Home Story Name', 'Materials Property', 'gwp calc'])
-    df_new = df_new.rename(columns={'Home Story Name':'floors', 'Materials Property': 'materials', 'gwp calc': 'gwp'})
+
     mat_list = df['Materials Property'].drop_duplicates().tolist()
 
     #creates a consolidated floors names in a given value
@@ -159,9 +164,6 @@ def material_select_(value, data):
         _gwp_list.append(np.around(_gwp_consolidate, 3))
 
     _df_consolidate = pd.DataFrame({'floor': _lvl_drop, 'gwp': _gwp_list})
-
-    bar_comparison = px.bar(df_new, x='floors', y='gwp', color='materials', title='GWP Comparison Between Material and Floor')
-
     for i in range(len(mat_list)):
         if value == mat_list[i]:
             bar = px.bar(
@@ -185,7 +187,19 @@ def material_select_(value, data):
                     style_header={'background': '#262626'},
                 ),
                     dcc.Graph(figure=bar, style={'height': '50vh'},className='mt-3'),
-                    dcc.Graph(figure=bar_comparison, style={'height': '50vh'})
+                    html.Div(id='bar comparison', className='my=3'),
+                    dbc.Switch(
+                        id='mat_log_switch', 
+                        label='Logarthmic Y-Axis', 
+                        value=False),
                 ])
             return children
-    
+
+def log_material_select(value, data):
+    df = pd.read_json(data)
+
+    df_new = df.filter(items=['Home Story Name', 'Materials Property', 'gwp calc'])
+    df_new = df_new.rename(columns={'Home Story Name':'floors', 'Materials Property': 'materials', 'gwp calc': 'gwp'})
+
+    bar_comparison = px.bar(df_new, x='floors', y='gwp', log_y=value ,color='materials', title='GWP Comparison Between Material and Floor')
+    return dcc.Graph(figure=bar_comparison, style={'height': '50vh'})

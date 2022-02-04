@@ -1,7 +1,8 @@
 import base64
 import datetime
 import io
-import xlrd
+from pydoc import classname
+#import xlrd
 
 import dash
 from dash.dependencies import Input, Output, State
@@ -123,8 +124,9 @@ def parse_contents(contents, filename, date):
                 'width': 'auto',
                 'backgroundColor': '#525252'               
             },
-            style_header={'background': '#262626' }
-
+            style_header={'background': '#262626', 'color':"#fafafa" },
+            id='df2 tbl',
+            editable=True,
         ),
         html.H3('Total embodied carbon is {:,} TCO2e.'.format(np.around(gwp_sum/1000),3)),
         dcc.Store(id='stored_data', data=df.to_json()),
@@ -160,8 +162,8 @@ def make_cards(n):
             [
                 dbc.Col(mc.first_card(), width = 4),
                 dbc.Col(mc.second_card(), width = 8)
-            ]
-    )
+            ],
+        )
     return children
 
 
@@ -175,8 +177,10 @@ def benchmark(value, store_sum):
         return dash.no_update
     else:
         benchmark = store_sum/value
+        rating = gc.rating(benchmark)
         children = html.Div([
-            html.H5('Building Benchmark is {} CO2e per sqm'.format(np.around(benchmark, 3)))
+            html.H5('Building Benchmark is {} CO2e per m2'.format(np.around(benchmark, 2))),
+            html.H5(rating)
         ])
     return children
 
@@ -219,10 +223,17 @@ def log_switch(value,data,data_sum):
 @app.callback(
     Output('bar comparison', "children"),
     Input('mat_log_switch', 'value'),
-    State('stored_data', 'data')
+    State('stored_data', 'data'),
 )
 def log_material(value, data):
     return gc.log_material_select(value, data)
+
+@app.callback(
+    Output('cell edit', 'children'),
+    Input('df2 tbl', 'active_cell'),
+)
+def cell_edit(data):
+    return gc.cell_edit_component(data)
 
 if __name__ == '__main__':
     app.run_server(debug=True)

@@ -10,11 +10,7 @@ import numpy as np
 
 import make_cards as mc
 
-def gwp_bar():
-    children = html.Div([
-                html.H3('under constructions')
-            ])
-    return children
+import app2
 
 def gwp_pie():
     children = [
@@ -127,7 +123,7 @@ def gwp_floor_bar(value, data, data_sum):
         title='GWP per Floor (%)',
         labels={
             'GWP Value': 'GWP Value in Log'
-        }
+        },
     ) 
     return [
         dash_table.DataTable(
@@ -197,9 +193,38 @@ def material_select_(value, data):
 
 def log_material_select(value, data):
     df = pd.read_json(data)
+    _df = df.groupby(by=['Materials Property', 'Home Story Name'], as_index=False).sum()
+    _df = _df.filter(items=['Materials Property', 'Home Story Name', 'gwp calc'])   
 
-    df_new = df.filter(items=['Home Story Name', 'Materials Property', 'gwp calc'])
-    df_new = df_new.rename(columns={'Home Story Name':'floors', 'Materials Property': 'materials', 'gwp calc': 'gwp'})
-
-    bar_comparison = px.bar(df_new, x='floors', y='gwp', log_y=value ,color='materials', title='GWP Comparison Between Material and Floor')
+    bar_comparison = px.bar(_df, 
+        x='Home Story Name', 
+        y='gwp calc', 
+        log_y=value,
+        color='Materials Property', 
+        title='GWP Comparison Between Material and Floor')
     return dcc.Graph(figure=bar_comparison, style={'height': '50vh'})
+
+def rating(gwp):
+    if gwp < 725:
+        return "⭐⭐⭐⭐⭐-5 Star rated structure"
+    elif gwp < 965.7:
+        return "⭐⭐⭐⭐-4 Star rated strucutre"
+    elif gwp < 1209.3:
+        return "⭐⭐⭐-3 Star rated strucutre"
+    elif gwp < 1450:
+        return "⭐⭐-2 Star rated strucutre"
+    elif gwp < 1690.7:
+        return "⭐-1 Star rated strucutre"
+
+def gwp_bar():
+    children = html.Div([
+                html.H4('Edit Specific data'),
+                html.P('Select the data you want to change from the table above'),
+                html.Div(id='cell edit')
+            ])
+    return children
+
+def cell_edit_component(data):
+    
+
+    return html.P(str(data))

@@ -37,7 +37,7 @@ def second_card():
                 active_tab = 'pie_graph_tab',
                 children = [
                     dbc.Tab(label='GWP Statistics', tab_id= 'pie_graph_tab'),
-                    dbc.Tab(label='Comparison', tab_id = 'bar_graph_tab'),
+                    dbc.Tab(label='Edit Material', tab_id = 'bar_graph_tab'),
                 ]
             ),
             html.Div(id='tab_content')

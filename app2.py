@@ -86,7 +86,7 @@ def parse_contents(contents, filename, date):
     
     gwp_list = []
     for i in range(len(df)):
-        unit = df_db.loc[df_db['material'] == df['Materials Property'][i], 'units'].values[0]
+        unit = df_db.loc[df['Materials Property'][i] == df_db['material'], 'units'].values[0]
         gwp = df_db.loc[df_db['material'] == df['Materials Property'][i], 'GWP'].values[0]
         density = df_db.loc[df_db['material'] == df['Materials Property'][i], 'density'].values[0]
         
@@ -105,6 +105,9 @@ def parse_contents(contents, filename, date):
         elif unit == 'kg': #kg gwp calculation
             gwp_solution = gwp * pd.to_numeric(df['Net Volume'][i], downcast='float') * pd.to_numeric(density, downcast='float')  #MAY NEED TO CONVERT TO TONNES DOUBLE CHECK UNITS
             gwp_list.append(np.around(gwp_solution, 4))
+        else:
+            gwp_list.append(0)
+
     
     df_gwp = pd.DataFrame(gwp_list, columns=['gwp calc'])
     df2 = pd.concat([df['description'], df['Materials Property'],df['3D Length'], df['Area'], df['Net Volume']], axis = 1)
@@ -176,11 +179,11 @@ def benchmark(value, store_sum):
     if value is None:
         return dash.no_update
     else:
-        benchmark = store_sum/value
+        benchmark = store_sum/(value*1000)
         rating = gc.rating(benchmark)
         children = html.Div([
             html.H5('Building Benchmark is {} CO2e per m2'.format(np.around(benchmark, 2))),
-            html.H5(rating)
+            html.H5([rating, benchmark])
         ])
     return children
 

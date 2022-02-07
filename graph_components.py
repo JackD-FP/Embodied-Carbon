@@ -160,13 +160,13 @@ def material_select_(value, data):
         _gwp_list.append(np.around(_gwp_consolidate, 3))
 
     _df_consolidate = pd.DataFrame({'floor': _lvl_drop, 'gwp': _gwp_list})
-    for i in range(len(mat_list)):
-        if value == mat_list[i]:
+    for mat_list in mat_list:
+        if value == mat_list:
             bar = px.bar(
                 data_frame=_df_consolidate,
                 x='floor',
                 y='gwp',
-                title='GWP of {} per floor'.format(mat_list[i])
+                title='GWP of {} per floor'.format(mat_list)
             )
 
             children =  html.Div(
@@ -189,7 +189,7 @@ def material_select_(value, data):
                         label='Logarthmic Y-Axis', 
                         value=False),
                 ])
-            return children
+            return children 
 
 def log_material_select(value, data):
     df = pd.read_json(data)

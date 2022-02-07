@@ -206,15 +206,15 @@ def log_material_select(value, data):
 
 def rating(gwp):
     if gwp < 725:
-        return "⭐⭐⭐⭐⭐-5 Star rated structure"
+        return "⭐⭐⭐⭐⭐- 5 Star rated structure"
     elif gwp < 965.7:
-        return "⭐⭐⭐⭐-4 Star rated strucutre"
+        return "⭐⭐⭐⭐- 4 Star rated strucutre"
     elif gwp < 1209.3:
-        return "⭐⭐⭐-3 Star rated strucutre"
+        return "⭐⭐⭐- 3 Star rated strucutre"
     elif gwp < 1450:
-        return "⭐⭐-2 Star rated strucutre"
+        return "⭐⭐- 2 Star rated strucutre"
     elif gwp < 1690.7:
-        return "⭐-1 Star rated strucutre"
+        return "⭐- 1 Star rated strucutre"
 
 def gwp_bar():
     children = html.Div([

@@ -179,7 +179,7 @@ def benchmark(value, store_sum):
     if value is None:
         return dash.no_update
     else:
-        benchmark = store_sum/(value*1000)
+        benchmark = store_sum/value
         rating = gc.rating(benchmark)
         children = html.Div([
             html.H5('Building Benchmark is {} CO2e per m2'.format(np.around(benchmark, 2))),

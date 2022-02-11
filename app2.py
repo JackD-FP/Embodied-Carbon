@@ -37,7 +37,7 @@ app.layout = html.Div([ # this code section taken from Dash docs https://dash.pl
         id='upload-data',
         children=html.Div([
             'Drag and Drop or ',
-            html.A('Select Files')
+            html.A('Schedule Files')
         ], className='shadow'),
         style={
             'width': '50%',
@@ -76,6 +76,8 @@ def parse_contents(contents, filename, date):
         return html.Div([
             'There was an error processing this file.'
         ])
+
+    
 
     df['description'] = df['Home Story Name'].str.cat(df['Element Type'].apply(str), sep =" | ")
     df['description'] = df['description'].str.cat(df['Cross Section Height at Bottom/Start (cut)'].apply(str), sep =" | ")

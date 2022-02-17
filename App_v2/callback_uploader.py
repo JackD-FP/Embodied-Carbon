@@ -29,13 +29,17 @@ def parse_contents(contents, filename, date):
             'There was an error processing this file.'
         ])
 
+    df = df.rename(columns=df.iloc[0], )
+    df2 = df.drop([0,0])
+
+
     
     return html.Div([
         html.H5(filename),
         html.H6(datetime.datetime.fromtimestamp(date)),
         dash_table.DataTable(
-            data=df.to_dict('records'),
-            columns=[{'name': i, 'id': i} for i in df.columns],
+            data=df2.to_dict('records'),
+            columns=[{'name': i, 'id': i} for i in df2.columns],
             page_size=15,
             style_data={
                 'whiteSpace': 'normal',

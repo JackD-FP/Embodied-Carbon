@@ -9,7 +9,8 @@ from server import app
 
 layout = [
     html.H1('Embodied Carbon', className="text-center my-5"),
-    html.P('Lorem ipsum dolor sit amet, consectetur adipiscing elit. \
+    html.P('Please add instruction how to use this. \
+        Lorem ipsum dolor sit amet, consectetur adipiscing elit. \
         Nunc at velit id libero commodo auctor. Aliquam mauris nibh, euismod sed tristique sit amet, \
         dictum quis nibh. Duis viverra, nunc iaculis pharetra ultrices, \
         urna nisl aliquet sem, at ultricies quam purus vitae nunc. Quisque semper eu turpis vel consequat. \
@@ -39,6 +40,11 @@ layout = [
         your building embodied carbon schedule",
         target="uploader_ui",
         placement='bottom'),
-    html.Div(id='output-data-upload')  
+    html.Div(id='output-data-upload'),
+    html.Footer([
+        html.Hr(),
+        html.H3('Fitzpatrick + Partners'),
+        html.P('brought to you by Jack')
+    ], className='mx-5')
 ]
 

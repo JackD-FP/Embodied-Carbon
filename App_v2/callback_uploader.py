@@ -1,6 +1,7 @@
 import io
 import base64
 import datetime
+import os
 
 from server import app
 
@@ -12,6 +13,21 @@ import pandas as pd
 import numpy as np
 
 import layout
+# import plotly.io as pio
+# pio.kaleido.scope.default_format = "svg"
+
+config = {
+    'toImageButtonOptions': {
+        'format': 'svg', # one of png, svg, jpeg, webp
+        'filename': 'custom_image',
+        'height': 500,
+        'width': 700,
+        'scale': 1 # Multiply title/legend/axis/canvas sizes by this factor
+    }
+}
+
+if not os.path.exists("image"):
+    os.mkdir('image')
 
 def parse_contents(contents, filename, date):
     content_type, content_string = contents.split(',')
@@ -141,7 +157,7 @@ def analytic_cards(data): #this callback is pretty slow... make fast (╯‵□�
                     id='material_selection',
                     options = opt_list,
                     placeholder='Choose Material',
-                    className='my-3 m-25'
+                    className='my-3 m-25 w-25'
                 ),
                 html.Div(id='material_per_floor_div'), #div for callback to output graph depending on selection
             ]
@@ -153,14 +169,14 @@ def analytic_cards(data): #this callback is pretty slow... make fast (╯‵□�
                 dbc.CardBody([
                     html.H2('Building Analytics'),
                     html.H5('Total Embodied Carbon is {} Tco2e'.format(np.around(total_ec/1000))),
-                    dbc.Input(id='gfa_bmrk', placeholder="Please input gfa", type='number'),
+                    dbc.Input(id='gfa_bmrk', placeholder="Please input gfa", type='number', className="w-25 my-3"),
                     html.Div(id='bmrk_result'),
                     dbc.Tabs([ 
                         dbc.Tab([
-                            dcc.Graph(figure=pie,style={'height': '75vh'}, className='mt-3')
+                            dcc.Graph(figure=pie,style={'height': '75vh'}, className='mt-3',config=config)
                         ], label="Tab 1"),
                         dbc.Tab([
-                            dcc.Graph(figure=bar, style={'height': '75vh'},className='my-3', id='log_bar')
+                            dcc.Graph(figure=bar, style={'height': '75vh'},className='my-3', id='log_bar',config=config)
                         ], label="Tab 2"),
                         dbc.Tab(tab_3_contents, label="Tab 3"), 
                     ])
@@ -241,14 +257,18 @@ def material_select(value, data):
                     },
                     style_header={'background': '#262626'},
                 ),
-                    dcc.Graph(figure=bar, style={'height': '50vh'},className='mt-3'),
-                    dcc.Graph(figure=bar_comparison, style={'height': '50vh'},className='h-50 my-3'),
+                    dcc.Graph(
+                        figure=bar, 
+                        style={'height': '50vh'},
+                        className='mt-3',
+                        config=config
+                    ),
+                    dcc.Graph(figure=bar_comparison, style={'height': '50vh'},className='my-3',config=config),
 
-                    dbc.Switch(
-                        id='mat_log_switch', 
-                        label='Logarthmic Y-Axis', 
-                        value=False),
+                    # dbc.Switch(
+                    #     id='mat_log_switch', 
+                    #     label='Logarthmic Y-Axis', 
+                    #     value=False),
                 ])
             return children 
-
 

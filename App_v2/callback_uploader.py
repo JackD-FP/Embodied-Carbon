@@ -13,8 +13,6 @@ import pandas as pd
 import numpy as np
 
 import layout
-# import plotly.io as pio
-# pio.kaleido.scope.default_format = "svg"
 
 config = {
     'toImageButtonOptions': {

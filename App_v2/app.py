@@ -16,7 +16,7 @@ df_db = pd.read_csv("Basic Material v3.csv")
 df_db['material'] = df_db['material name'].str.cat(df_db['material variant name'], sep = ' ')
 df_db['material'] = df_db['material'].str.cat(df_db['locations'], sep =" - ")
 
-app.layout = html.Div(layout)
+app.layout = html.Div(layout, className="position-relative")
 
 if __name__ == '__main__':
     app.run_server(debug=True)

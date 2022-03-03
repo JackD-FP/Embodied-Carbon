@@ -45,6 +45,6 @@ layout = [
         html.Hr(),
         html.H3('Fitzpatrick + Partners'),
         html.P('brought to you by Jack')
-    ], className='mx-5')
+    ], className='bottom-0 mx-5')
 ]
 

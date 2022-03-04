@@ -20,4 +20,4 @@ df_db['material'] = df_db['material'].str.cat(df_db['locations'], sep =" - ")
 app.layout = html.Div(layout, className="position-relative")
 
 if __name__ == '__main__':
-    app.run_server(debug=True)
+    app.run_server(debug=True, port=8051)

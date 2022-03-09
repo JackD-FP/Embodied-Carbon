@@ -2,11 +2,7 @@
  
 App_v2 is another app to playaround with... uses embodied carbon taken from archicad.
 
-to run it... 
+to run it: python3 app2.py
 
-python3 app2.py
-
-for App_v2 it's
-
-python3 app.py
+for App_v2: python3 app.py
 

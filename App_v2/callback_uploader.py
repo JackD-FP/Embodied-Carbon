@@ -211,8 +211,8 @@ def material_select(value, data):
     _df = _df.filter(items=['Building Materials (All)', 'Home Story Name', 'Embodied Carbon'])   
 
     bar_comparison = px.bar(_df, 
-        x='Home Story Name', 
-        y='Embodied Carbon', 
+        y='Home Story Name', 
+        x='Embodied Carbon', 
         #log_y=value,
         color='Building Materials (All)', 
         title='GWP Comparison Between Material and Floor')
@@ -246,7 +246,7 @@ def material_select(value, data):
                         className='mt-3',
                         config=config
                     ),
-                    dcc.Graph(figure=bar_comparison, style={'height': '50vh'},className='my-3',config=config),
+                    dcc.Graph(figure=bar_comparison, style={'height': '75vh'},className='my-3',config=config),
 
                     # dbc.Switch(
                     #     id='mat_log_switch', 
